@@ -1,4 +1,8 @@
 from django.shortcuts import render, redirect
+from django.core.paginator import Paginator
+from django.contrib import messages
+
+
 from chat.models import Room, Message
 from django.http import HttpResponse, JsonResponse
 
@@ -31,12 +35,15 @@ def send(request):
     username = request.POST['username']
     room_id = request.POST['room_id']
 
-    new_message = Message.objects.create(value=message, user=username, room=room_id)
-    new_message.save()
-    return HttpResponse('Message sent successfully')
+    if message == "":
+        messages.add_message(request, messages.WARNING, 'Enter a message')
+    else:
+        new_message = Message.objects.create(value=message, user=username, room=room_id)
+        new_message.save()
+        # messages.add_message(request, messages.INFO, 'Message sent successfully')
 
 def getMessages(request, room):
     room_details = Room.objects.get(name=room)
 
-    messages = Message.objects.filter(room=room_details.id)
-    return JsonResponse({"messages":list(messages.values())})
+    messages = Message.objects.filter(room=room_details.id).order_by("-date")
+    return JsonResponse({"messages": list(messages.values())})
